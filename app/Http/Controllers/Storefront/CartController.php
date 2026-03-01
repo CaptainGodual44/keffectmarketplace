@@ -28,6 +28,8 @@ final class CartController extends Controller
 
     public function add(Request $request, Product $product): RedirectResponse
     {
+        abort_if($product->status !== 'active', 404, 'Product is unavailable.');
+
         $validated = $request->validate(['quantity' => ['nullable', 'integer', 'min:1', 'max:99']]);
         $qty = (int) ($validated['quantity'] ?? 1);
 
@@ -43,12 +45,13 @@ final class CartController extends Controller
     {
         $user = $request->user();
         $cart = Cart::query()->firstOrCreate(['user_id' => $user->id]);
-        $cart->load('items.product');
-
-        abort_if($cart->items->isEmpty(), 422, 'Cart is empty.');
 
         DB::transaction(function () use ($cart, $user): void {
-            $total = $cart->items->sum(fn ($item) => $item->quantity * ($item->product->price_linden ?? 0));
+            $items = $cart->items()->with('product')->lockForUpdate()->get();
+
+            abort_if($items->isEmpty(), 422, 'Cart is empty.');
+
+            $total = $items->sum(fn ($item) => $item->quantity * ($item->product->price_linden ?? 0));
 
             $order = Order::query()->create([
                 'order_number' => 'ORD-'.str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT),
@@ -58,7 +61,7 @@ final class CartController extends Controller
                 'total_linden' => $total,
             ]);
 
-            foreach ($cart->items as $item) {
+            foreach ($items as $item) {
                 OrderItem::query()->create([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
