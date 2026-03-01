@@ -16,7 +16,13 @@ final class LindenWebhookController extends Controller
     {
         $signature = (string) $request->header('X-LINDEN-SIGNATURE', '');
         $payload = (string) $request->getContent();
-        $expected = hash_hmac('sha256', $payload, (string) config('services.linden.webhook_secret'));
+        $webhookSecret = trim((string) config('services.linden.webhook_secret', ''));
+
+        if ($webhookSecret === '') {
+            return response()->json(['message' => 'Webhook signing secret is not configured'], 503);
+        }
+
+        $expected = hash_hmac('sha256', $payload, $webhookSecret);
 
         if (!hash_equals($expected, $signature)) {
             return response()->json(['message' => 'Invalid webhook signature'], 403);
