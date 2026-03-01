@@ -9,17 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-final class Order extends Model
+final class Cart extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'order_number',
-        'user_id',
-        'status',
-        'payment_method',
-        'total_linden',
-    ];
+    protected $fillable = ['user_id'];
 
     public function user(): BelongsTo
     {
@@ -28,6 +22,6 @@ final class Order extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(CartItem::class);
     }
 }
