@@ -8,17 +8,10 @@ string PRODUCT_SKU = "PROD-001";
 integer PRICE_L$ = 150;
 key currentUser;
 
-string canonicalSigningString(string payload, string timestamp, string nonce)
-{
-    return payload + "|" + timestamp + "|" + nonce;
-}
-
 string buildSignature(string payload, string timestamp, string nonce)
 {
-    string signingInput = canonicalSigningString(payload, timestamp, nonce);
-
-    // Canonical contract: lowercase hexadecimal HMAC-SHA256 over "payload|timestamp|nonce".
-    return llToLower(llHMAC(SHARED_SECRET, signingInput, "sha256"));
+    // Placeholder: implement real HMAC or agreed signature method.
+    return llMD5String(payload + timestamp + nonce + SHARED_SECRET, 0);
 }
 
 default

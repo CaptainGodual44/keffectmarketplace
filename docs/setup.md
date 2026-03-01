@@ -2,45 +2,49 @@
 
 ## Prerequisites
 
-- PHP 8.3+
+- PHP 8.2+
 - Composer 2+
 - Node.js 20+
-- MySQL 8+ or PostgreSQL 15+
-- Redis 7+
+- MySQL 8+ / PostgreSQL 15+ / SQLite
 
-## Environment Variables (planned)
-
-- `APP_ENV`, `APP_KEY`, `APP_URL`
-- `DB_*`
-- `REDIS_*`
-- `QUEUE_CONNECTION=redis`
-- `LSL_SHARED_SECRET`
-- `LSL_WEBHOOK_SECRET`
-- `LINDEN_PAYMENT_PROVIDER_URL`
-
-## Planned Install Steps
+## Installation
 
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate --seed
+php artisan migrate
 npm install
 npm run build
 ```
 
-## Planned Runtime Steps
+## Run Locally
 
 ```bash
 php artisan serve
 php artisan queue:work
-php artisan schedule:work
 ```
 
-## Validation Checklist
+## Important Configuration
 
-- Application boots locally
-- Database migrations complete
-- Queue worker starts
-- LSL signed request endpoint returns expected validation messages
-- Webhook endpoint rejects malformed signature and accepts valid payload
+Set these in `.env` for Linden integration:
+
+- `LSL_SHARED_SECRET`
+- `LSL_WEBHOOK_SECRET`
+- `LINDEN_PAYMENT_PROVIDER_URL`
+
+Also map webhook secret in `config/services.php`:
+
+```php
+'linden' => [
+    'webhook_secret' => env('LSL_WEBHOOK_SECRET'),
+],
+```
+
+## Verification
+
+```bash
+php artisan route:list
+php artisan migrate:status
+php artisan test
+```

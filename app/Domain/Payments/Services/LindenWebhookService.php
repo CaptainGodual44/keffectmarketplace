@@ -4,38 +4,29 @@ declare(strict_types=1);
 
 namespace App\Domain\Payments\Services;
 
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 final class LindenWebhookService
 {
-    public function markTransactionProcessed(string $intentId, string $providerTxnId, string $payloadHash): bool
+    public function markTransactionProcessed(string $providerTxnId, string $payloadHash): bool
     {
-        try {
-            DB::table('payment_webhook_events')->insert([
-                'event_id' => (string) str()->uuid(),
-                'intent_uuid' => $intentId,
-                'provider_txn_id' => $providerTxnId,
-                'payload_hash' => $payloadHash,
-                'processed_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $existing = DB::table('payment_webhook_events')
+            ->where('provider_txn_id', $providerTxnId)
+            ->exists();
 
-            return true;
-        } catch (QueryException $queryException) {
-            if ($this->isUniqueConstraintViolation($queryException)) {
-                return false;
-            }
-
-            throw $queryException;
+        if ($existing) {
+            return false;
         }
-    }
 
-    private function isUniqueConstraintViolation(QueryException $queryException): bool
-    {
-        $sqlState = $queryException->errorInfo[0] ?? null;
+        DB::table('payment_webhook_events')->insert([
+            'event_id' => (string) str()->uuid(),
+            'provider_txn_id' => $providerTxnId,
+            'payload_hash' => $payloadHash,
+            'processed_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        return in_array($sqlState, ['23000', '23505'], true);
+        return true;
     }
 }
