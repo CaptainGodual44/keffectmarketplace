@@ -5,30 +5,40 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 final class ProductController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $products = [
-            ['sku' => 'PROD-001', 'name' => 'Starter Avatar Outfit', 'price_l$' => 150],
-            ['sku' => 'PROD-002', 'name' => 'Virtual Home Decor Pack', 'price_l$' => 320],
-            ['sku' => 'PROD-003', 'name' => 'Creator Tools', 'price_l$' => 500],
-        ];
+        $query = Product::query()->where('status', 'active');
 
-        return view('storefront.products.index', compact('products'));
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $sort = (string) $request->query('sort', 'name_asc');
+        match ($sort) {
+            'price_asc' => $query->orderBy('price_linden'),
+            'price_desc' => $query->orderByDesc('price_linden'),
+            'newest' => $query->latest('id'),
+            default => $query->orderBy('name'),
+        };
+
+        $products = $query->paginate(12)->withQueryString();
+
+        return view('storefront.products.index', compact('products', 'search', 'sort'));
     }
 
     public function show(string $sku): View
     {
-        $product = [
-            'sku' => $sku,
-            'name' => 'Sample Product ' . $sku,
-            'description' => 'Product detail placeholder for full catalog integration.',
-            'price_l$' => 199,
-        ];
-
+        $product = Product::query()->where('sku', $sku)->firstOrFail();
         return view('storefront.products.show', compact('product'));
     }
 }

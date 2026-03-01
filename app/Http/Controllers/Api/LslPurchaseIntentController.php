@@ -19,6 +19,10 @@ final class LslPurchaseIntentController extends Controller
         $nonce = (string) $request->header('X-LSL-NONCE', '');
         $signature = (string) $request->header('X-LSL-SIGNATURE', '');
 
+        if ($objectId === '' || $timestamp === '' || $nonce === '' || $signature === '') {
+            return response()->json(['message' => 'Missing required LSL signature headers'], 422);
+        }
+
         $object = DB::table('lsl_objects')->where('object_uuid', $objectId)->where('active', true)->first();
 
         if (!$object) {
@@ -29,12 +33,29 @@ final class LslPurchaseIntentController extends Controller
             return response()->json(['message' => 'Stale timestamp'], 422);
         }
 
+        $existingNonce = DB::table('lsl_request_nonces')
+            ->where('object_uuid', $objectId)
+            ->where('nonce', $nonce)
+            ->exists();
+
+        if ($existingNonce) {
+            return response()->json(['message' => 'Replay detected'], 409);
+        }
+
         $payload = (string) $request->getContent();
         $secret = (string) $object->shared_secret_hash;
 
         if (!$validator->isValid($payload, $timestamp, $nonce, $signature, $secret)) {
             return response()->json(['message' => 'Invalid signature'], 403);
         }
+
+        DB::table('lsl_request_nonces')->insert([
+            'object_uuid' => $objectId,
+            'nonce' => $nonce,
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $intentId = (string) str()->uuid();
 

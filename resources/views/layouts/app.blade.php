@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Keffect Marketplace' }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $title ?? config('app.name', 'Keffect Marketplace') }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
         header, footer { background: #111827; color: #fff; padding: 1rem 2rem; }
@@ -22,16 +24,34 @@
 <header>
     <div class="container">
         <nav>
-            <a href="/">Storefront</a>
-            <a href="/products">Products</a>
-            <a href="/account">Account</a>
-            <a href="/admin">Admin</a>
+            <a href="{{ route('storefront.home') }}">Storefront</a>
+            <a href="{{ route('storefront.products.index') }}">Products</a>
+            @auth
+                <a href="{{ route('storefront.account.dashboard') }}">Account</a>
+                <a href="{{ route('admin.dashboard') }}">Admin</a>
+                <a href="{{ route('profile.edit') }}">Profile</a>
+                <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" style="background:transparent;border:1px solid #fff;color:#fff;padding:.2rem .5rem;cursor:pointer;">Logout</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}">Login</a>
+                <a href="{{ route('register') }}">Register</a>
+            @endauth
         </nav>
     </div>
 </header>
 <main>
     <div class="container">
-        @yield('content')
+        @isset($header)
+            <div style="margin-bottom:1rem;">{{ $header }}</div>
+        @endisset
+
+        @hasSection('content')
+            @yield('content')
+        @else
+            {{ $slot ?? '' }}
+        @endif
     </div>
 </main>
 <footer>

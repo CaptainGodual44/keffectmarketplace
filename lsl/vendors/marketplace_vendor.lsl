@@ -1,17 +1,23 @@
 // Marketplace Vendor (Draft)
 // Demonstrates permission-based L$ debit authorization and signed intent submission.
+// NOTE: Canonical API contract requires HMAC-SHA256(payload|timestamp|nonce, shared_secret).
+// If unavailable in LSL runtime, use a trusted relay to sign requests.
 
 string API_URL = "https://example.com/api/lsl/purchase-intent";
 string OBJECT_ID = "object-uuid";
-string SHARED_SECRET = "replace_with_secret";
 string PRODUCT_SKU = "PROD-001";
 integer PRICE_L$ = 150;
 key currentUser;
 
-string buildSignature(string payload, string timestamp, string nonce)
+string buildPayload()
 {
-    // Placeholder: implement real HMAC or agreed signature method.
-    return llMD5String(payload + timestamp + nonce + SHARED_SECRET, 0);
+    return llList2Json(JSON_OBJECT, [
+        "avatar_id", (string)currentUser,
+        "product_sku", PRODUCT_SKU,
+        "quantity", 1,
+        "currency", "L$",
+        "amount", PRICE_L$
+    ]);
 }
 
 default
@@ -19,7 +25,6 @@ default
     touch_start(integer total_number)
     {
         currentUser = llDetectedKey(0);
-        // Request permission from the avatar to debit L$.
         llRequestPermissions(currentUser, PERMISSION_DEBIT);
     }
 
@@ -27,22 +32,13 @@ default
     {
         if (perm & PERMISSION_DEBIT)
         {
-            integer unixTs = llGetUnixTime();
-            string timestamp = (string)unixTs;
+            string payload = buildPayload();
+            string timestamp = (string)llGetUnixTime();
             string nonce = (string)llFrand(99999999.0);
 
-            // Optional direct debit step depending on in-world transaction design.
-            // integer debitResult = llGiveMoney(llGetOwner(), PRICE_L$);
-
-            string payload = llList2Json(JSON_OBJECT, [
-                "avatar_id", (string)currentUser,
-                "product_sku", PRODUCT_SKU,
-                "quantity", 1,
-                "currency", "L$",
-                "amount", PRICE_L$
-            ]);
-
-            string signature = buildSignature(payload, timestamp, nonce);
+            // Placeholder signature - do NOT use in production.
+            // Replace with relay-generated HMAC-SHA256 matching API contract.
+            string signature = llSHA1String(payload + "|" + timestamp + "|" + nonce);
 
             llHTTPRequest(
                 API_URL,

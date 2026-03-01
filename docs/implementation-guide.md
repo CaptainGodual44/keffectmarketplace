@@ -112,3 +112,64 @@ Add `services.linden.webhook_secret` mapping in `config/services.php`.
 - Signature validation unit tests.
 - Webhook duplicate/idempotency tests.
 - Authorization tests for admin routes.
+
+## 10. Implemented Next-Step Upgrades (DB-backed + auth/admin middleware)
+
+The scaffold now includes the first recommended upgrades:
+
+- Controllers now query real models instead of hardcoded arrays:
+  - `Storefront\HomeController` uses `Product` records marked `featured`
+  - `Storefront\ProductController` uses paginated `Product` data
+  - `Storefront\AccountController` loads authenticated user's `orders`
+  - Admin list controllers use paginated `Product`, `Order`, and `User` data
+- Added auth/authorization protection:
+  - `/account` now requires `auth` middleware
+  - `/admin/*` now requires `auth` + custom `admin` middleware
+  - `App\Http\Middleware\EnsureUserIsAdmin` checks `role=admin` and `status=active`
+- Added marketplace core schema tables:
+  - `products`
+  - `orders`
+  - user profile extensions (`public_uuid`, `role`, `status`)
+- Added seeded demo users/products/orders for quick local testing.
+
+### Seeded accounts
+
+- Admin: `admin@example.com` / `password`
+- Customer: `customer@example.com` / `password`
+- Test: `test@example.com` / `password`
+
+## 11. Sprint 1 Delivered
+
+Sprint 1 security and auth foundations are now in place:
+
+- Installed Laravel Breeze (Blade) authentication scaffold.
+- Added replay protection table `lsl_request_nonces` and nonce uniqueness check in purchase-intent handling.
+- Enforced canonical signature header presence for LSL purchase intents.
+- Hardened webhook flow with intent existence check and strict amount/currency verification.
+- Added feature tests for:
+  - valid purchase-intent signature acceptance
+  - replayed nonce rejection
+  - webhook amount mismatch rejection
+  - admin authorization (guest/customer/admin behavior)
+
+## 12. Sprint 2 Delivered
+
+Sprint 2 implementation delivered the core commerce/admin MVP features:
+
+- Admin product CRUD:
+  - list/create/edit/delete routes and views
+  - validation via `ProductUpsertRequest`
+- Admin order operations:
+  - order detail view with item timeline
+  - status transition endpoint (`pending_authorized_debit`, `paid`, `fulfilled`, `cancelled`)
+- Storefront catalog UX improvements:
+  - product search (`q`) and sort (`name_asc`, `price_asc`, `price_desc`, `newest`)
+- Cart + checkout scaffold:
+  - `carts`, `cart_items`, `order_items` schema
+  - add-to-cart route from product page
+  - checkout action creating order + order_items snapshot and clearing cart
+
+### Sprint 2 tests added
+
+- `AdminProductCrudTest`
+- `CheckoutFlowTest`
