@@ -2,22 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Payments\Services;
+namespace App\Domain\LslBridge\Services;
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-final class LindenWebhookService
+final class NonceStore
 {
-    public function markTransactionProcessed(string $intentId, string $providerTxnId, string $payloadHash): bool
+    public function claim(string $objectUuid, string $nonce, int $timestamp, int $windowSeconds = 300): bool
     {
+        DB::table('lsl_request_nonces')
+            ->where('expires_at', '<', now())
+            ->delete();
+
+        $expiresAt = now()->addSeconds($windowSeconds);
+
         try {
-            DB::table('payment_webhook_events')->insert([
-                'event_id' => (string) str()->uuid(),
-                'intent_uuid' => $intentId,
-                'provider_txn_id' => $providerTxnId,
-                'payload_hash' => $payloadHash,
-                'processed_at' => now(),
+            DB::table('lsl_request_nonces')->insert([
+                'object_uuid' => $objectUuid,
+                'nonce' => $nonce,
+                'request_timestamp' => $timestamp,
+                'expires_at' => $expiresAt,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
