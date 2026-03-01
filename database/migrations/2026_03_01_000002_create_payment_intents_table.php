@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->unsignedInteger('amount');
             $table->string('currency', 8);
             $table->string('status', 64)->index();
-            $table->string('nonce', 64)->index();
+            $table->string('nonce', 64)->unique();
             $table->timestamps();
         });
     }
