@@ -64,3 +64,13 @@ php artisan queue:work
 ```
 
 > This repository state is an architectural initial commit that defines the implementation blueprint, integration contracts, and setup expectations.
+
+## Implemented Scaffold (Current)
+
+The following baseline implementation files are now present to begin coding immediately:
+
+- API routes for LSL purchase intent, Linden webhook processing, and order status lookup (`routes/api.php`)
+- Request validation for LSL purchase intents (`app/Http/Requests/Api/LslPurchaseIntentRequest.php`)
+- API controllers for purchase-intent creation, webhook processing, and status retrieval (`app/Http/Controllers/Api/*`)
+- Signature validation and webhook idempotency services (`app/Domain/LslBridge/Services`, `app/Domain/Payments/Services`)
+- Initial schema migrations for `lsl_objects`, `payment_intents`, `payment_webhook_events`, and `lsl_delivery_receipts`
