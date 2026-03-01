@@ -15,4 +15,5 @@
     @else
         <p><a href="{{ route('login') }}">Login</a> to add to cart.</p>
     @endauth
+    <button>Add to cart</button>
 @endsection
