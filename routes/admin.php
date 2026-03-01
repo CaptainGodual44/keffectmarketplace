@@ -25,5 +25,7 @@ Route::prefix('admin')
         Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/status', [OrderManagementController::class, 'updateStatus'])->name('orders.status.update');
 
+        Route::get('/products', [ProductManagementController::class, 'index'])->name('products.index');
+        Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders.index');
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
     });
