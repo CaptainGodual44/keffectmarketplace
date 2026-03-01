@@ -17,15 +17,26 @@ final class SignatureValidator
         return hash_equals($computed, strtolower($signature));
     }
 
-    public function timestampWithinTolerance(string $timestamp, int $allowedSkewSeconds = 300): bool
+    /**
+     * @return array{valid: bool, drift_seconds: int|null}
+     */
+    public function validateTimestamp(string $timestamp, int $allowedSkewSeconds = 300): array
     {
         if (!ctype_digit($timestamp)) {
-            return false;
+            return ['valid' => false, 'drift_seconds' => null];
         }
 
-        $ts = (int) $timestamp;
+        $driftSeconds = abs(time() - (int) $timestamp);
 
-        return abs(time() - $ts) <= $allowedSkewSeconds;
+        return [
+            'valid' => $driftSeconds <= $allowedSkewSeconds,
+            'drift_seconds' => $driftSeconds,
+        ];
+    }
+
+    public function timestampWithinTolerance(string $timestamp, int $allowedSkewSeconds = 300): bool
+    {
+        return $this->validateTimestamp($timestamp, $allowedSkewSeconds)['valid'];
     }
 
     private function canonicalSigningString(string $payload, string $timestamp, string $nonce): string
