@@ -47,6 +47,7 @@ A comprehensive online marketplace architecture using **PHP Laravel** for both t
 - [Code Structure](docs/code-structure.md)
 - [L$ + LSL Payment Flow](docs/payment-lsl.md)
 - [LSL API Contract](lsl/docs/lsl-api-contract.md)
+- [Implementation Guide](docs/implementation-guide.md)
 
 ## Quick Start (Design Baseline)
 
