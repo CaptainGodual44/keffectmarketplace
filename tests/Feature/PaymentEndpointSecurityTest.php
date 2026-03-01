@@ -139,4 +139,45 @@ final class PaymentEndpointSecurityTest extends TestCase
             ->assertStatus(202)
             ->assertJsonPath('message', 'Duplicate webhook ignored');
     }
+
+    public function test_webhook_requires_intent_id(): void
+    {
+        config()->set('services.linden.webhook_secret', 'expected-secret');
+
+        $payload = [
+            'provider_txn_id' => 'txn-123',
+            'amount' => 150,
+            'currency' => 'L$',
+        ];
+
+        $json = json_encode($payload, JSON_THROW_ON_ERROR);
+        $signature = hash_hmac('sha256', $json, 'expected-secret');
+
+        $this->postJson('/api/payments/linden/webhook', $payload, ['X-LINDEN-SIGNATURE' => $signature])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Missing intent_id');
+    }
+
+    public function test_webhook_rejects_unknown_intent_without_marking_processed(): void
+    {
+        config()->set('services.linden.webhook_secret', 'expected-secret');
+
+        $payload = [
+            'intent_id' => (string) str()->uuid(),
+            'provider_txn_id' => 'txn-unknown-intent',
+            'amount' => 150,
+            'currency' => 'L$',
+        ];
+
+        $json = json_encode($payload, JSON_THROW_ON_ERROR);
+        $signature = hash_hmac('sha256', $json, 'expected-secret');
+
+        $this->postJson('/api/payments/linden/webhook', $payload, ['X-LINDEN-SIGNATURE' => $signature])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Unknown intent_id');
+
+        $this->assertDatabaseMissing('payment_webhook_events', [
+            'provider_txn_id' => 'txn-unknown-intent',
+        ]);
+    }
 }
