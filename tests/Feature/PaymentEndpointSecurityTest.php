@@ -102,6 +102,21 @@ final class PaymentEndpointSecurityTest extends TestCase
             ->assertJsonPath('message', 'Invalid webhook signature');
     }
 
+    public function test_rejects_webhook_when_secret_is_unset(): void
+    {
+        config()->set('services.linden.webhook_secret', '   ');
+
+        $this->postJson('/api/payments/linden/webhook', [
+            'intent_id' => (string) str()->uuid(),
+            'provider_txn_id' => 'txn-1',
+            'amount' => 150,
+            'currency' => 'L$',
+        ], [
+            'X-LINDEN-SIGNATURE' => hash_hmac('sha256', '{"intent_id":"fake"}', ''),
+        ])->assertStatus(503)
+            ->assertJsonPath('message', 'Webhook signing secret is not configured');
+    }
+
     public function test_duplicate_webhook_is_idempotent(): void
     {
         config()->set('services.linden.webhook_secret', 'expected-secret');
