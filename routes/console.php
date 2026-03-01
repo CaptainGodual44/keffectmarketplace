@@ -29,3 +29,9 @@ Artisan::command('marketplace:reset-admin {email=admin@example.com} {password=pa
 
     Log::info('Admin account reset via CLI command.', ['email' => $user->email]);
 })->purpose('Create/reset admin credentials for marketplace login troubleshooting');
+use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Artisan;
+
+Artisan::command('inspire', function () {
+    $this->comment(Inspiring::quote());
+})->purpose('Display an inspiring quote');
