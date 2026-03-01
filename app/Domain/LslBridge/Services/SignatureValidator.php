@@ -8,9 +8,13 @@ final class SignatureValidator
 {
     public function isValid(string $payload, string $timestamp, string $nonce, string $signature, string $secret): bool
     {
-        $computed = hash_hmac('sha256', $payload . '|' . $timestamp . '|' . $nonce, $secret);
+        if ($signature === '' || !ctype_xdigit($signature)) {
+            return false;
+        }
 
-        return hash_equals($computed, $signature);
+        $computed = hash_hmac('sha256', $this->canonicalSigningString($payload, $timestamp, $nonce), $secret);
+
+        return hash_equals($computed, strtolower($signature));
     }
 
     public function timestampWithinTolerance(string $timestamp, int $allowedSkewSeconds = 300): bool
@@ -22,5 +26,10 @@ final class SignatureValidator
         $ts = (int) $timestamp;
 
         return abs(time() - $ts) <= $allowedSkewSeconds;
+    }
+
+    private function canonicalSigningString(string $payload, string $timestamp, string $nonce): string
+    {
+        return $payload . '|' . $timestamp . '|' . $nonce;
     }
 }
