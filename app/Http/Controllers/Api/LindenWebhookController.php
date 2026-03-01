@@ -23,9 +23,21 @@ final class LindenWebhookController extends Controller
         }
 
         $providerTxnId = (string) $request->input('provider_txn_id');
+        $intentId = (string) $request->input('intent_id');
+        $amount = (int) $request->input('amount', 0);
+        $currency = (string) $request->input('currency', '');
 
-        if ($providerTxnId === '') {
-            return response()->json(['message' => 'Missing provider_txn_id'], 422);
+        if ($providerTxnId === '' || $intentId === '') {
+            return response()->json(['message' => 'Missing provider_txn_id or intent_id'], 422);
+        }
+
+        $intent = DB::table('payment_intents')->where('intent_uuid', $intentId)->first();
+        if (!$intent) {
+            return response()->json(['message' => 'Unknown payment intent'], 404);
+        }
+
+        if ($currency !== 'L$' || $amount !== (int) $intent->amount) {
+            return response()->json(['message' => 'Amount/currency mismatch'], 422);
         }
 
         $processed = $webhookService->markTransactionProcessed($providerTxnId, hash('sha256', $payload));
@@ -34,7 +46,7 @@ final class LindenWebhookController extends Controller
         }
 
         DB::table('payment_intents')
-            ->where('intent_uuid', (string) $request->input('intent_id'))
+            ->where('intent_uuid', $intentId)
             ->update([
                 'status' => 'paid',
                 'updated_at' => now(),

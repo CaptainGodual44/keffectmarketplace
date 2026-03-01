@@ -1,14 +1,22 @@
 # LSL API Contract (Draft)
 
-## 1) Purchase Intent Endpoint
+## Signature Contract (Canonical)
 
-- **URL**: `/api/lsl/purchase-intent`
-- **Method**: `POST`
-- **Headers**:
+For `POST /api/lsl/purchase-intent`, the server validates:
+
+- `signature = HMAC_SHA256(payload + "|" + timestamp + "|" + nonce, shared_secret)`
+- Headers required:
   - `X-LSL-OBJECT-ID`
   - `X-LSL-TIMESTAMP`
   - `X-LSL-NONCE`
   - `X-LSL-SIGNATURE`
+
+If your in-world script cannot compute HMAC-SHA256 directly, route signing through a trusted relay service that can generate canonical signatures.
+
+## 1) Purchase Intent Endpoint
+
+- **URL**: `/api/lsl/purchase-intent`
+- **Method**: `POST`
 
 ### Body (JSON)
 
@@ -39,6 +47,7 @@
 - **Validation**:
   - Signature verification with `LSL_WEBHOOK_SECRET`
   - Idempotency by provider transaction ID
+  - Intent amount + currency match (`L$`)
 
 ## 3) Delivery Status Endpoint
 

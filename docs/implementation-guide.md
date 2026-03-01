@@ -137,3 +137,17 @@ The scaffold now includes the first recommended upgrades:
 - Admin: `admin@example.com` / `password`
 - Customer: `customer@example.com` / `password`
 - Test: `test@example.com` / `password`
+
+## 11. Sprint 1 Delivered
+
+Sprint 1 security and auth foundations are now in place:
+
+- Installed Laravel Breeze (Blade) authentication scaffold.
+- Added replay protection table `lsl_request_nonces` and nonce uniqueness check in purchase-intent handling.
+- Enforced canonical signature header presence for LSL purchase intents.
+- Hardened webhook flow with intent existence check and strict amount/currency verification.
+- Added feature tests for:
+  - valid purchase-intent signature acceptance
+  - replayed nonce rejection
+  - webhook amount mismatch rejection
+  - admin authorization (guest/customer/admin behavior)
