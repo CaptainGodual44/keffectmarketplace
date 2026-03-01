@@ -10,4 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('storefront.home');
 Route::get('/products', [ProductController::class, 'index'])->name('storefront.products.index');
 Route::get('/products/{sku}', [ProductController::class, 'show'])->name('storefront.products.show');
-Route::get('/account', [AccountController::class, 'dashboard'])->name('storefront.account.dashboard');
+
+Route::middleware('auth')->group(function (): void {
+    Route::get('/account', [AccountController::class, 'dashboard'])->name('storefront.account.dashboard');
+});

@@ -112,3 +112,28 @@ Add `services.linden.webhook_secret` mapping in `config/services.php`.
 - Signature validation unit tests.
 - Webhook duplicate/idempotency tests.
 - Authorization tests for admin routes.
+
+## 10. Implemented Next-Step Upgrades (DB-backed + auth/admin middleware)
+
+The scaffold now includes the first recommended upgrades:
+
+- Controllers now query real models instead of hardcoded arrays:
+  - `Storefront\HomeController` uses `Product` records marked `featured`
+  - `Storefront\ProductController` uses paginated `Product` data
+  - `Storefront\AccountController` loads authenticated user's `orders`
+  - Admin list controllers use paginated `Product`, `Order`, and `User` data
+- Added auth/authorization protection:
+  - `/account` now requires `auth` middleware
+  - `/admin/*` now requires `auth` + custom `admin` middleware
+  - `App\Http\Middleware\EnsureUserIsAdmin` checks `role=admin` and `status=active`
+- Added marketplace core schema tables:
+  - `products`
+  - `orders`
+  - user profile extensions (`public_uuid`, `role`, `status`)
+- Added seeded demo users/products/orders for quick local testing.
+
+### Seeded accounts
+
+- Admin: `admin@example.com` / `password`
+- Customer: `customer@example.com` / `password`
+- Test: `test@example.com` / `password`

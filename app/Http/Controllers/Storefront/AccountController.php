@@ -6,15 +6,17 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 final class AccountController extends Controller
 {
-    public function dashboard(): View
+    public function dashboard(Request $request): View
     {
-        $orders = [
-            ['id' => 'ORD-1001', 'status' => 'paid', 'total_l$' => 350],
-            ['id' => 'ORD-1002', 'status' => 'pending', 'total_l$' => 120],
-        ];
+        $orders = $request->user()
+            ->orders()
+            ->latest('id')
+            ->take(20)
+            ->get();
 
         return view('storefront.account.dashboard', compact('orders'));
     }
