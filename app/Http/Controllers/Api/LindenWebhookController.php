@@ -23,22 +23,40 @@ final class LindenWebhookController extends Controller
         }
 
         $providerTxnId = (string) $request->input('provider_txn_id');
+        $intentId = (string) $request->input('intent_id');
 
         if ($providerTxnId === '') {
             return response()->json(['message' => 'Missing provider_txn_id'], 422);
         }
 
-        $processed = $webhookService->markTransactionProcessed($providerTxnId, hash('sha256', $payload));
+        if ($intentId === '') {
+            return response()->json(['message' => 'Missing intent_id'], 422);
+        }
+
+        $intentExists = DB::table('payment_intents')
+            ->where('intent_uuid', $intentId)
+            ->exists();
+
+        if (!$intentExists) {
+            return response()->json(['message' => 'Unknown payment intent'], 404);
+        }
+
+        $processed = $webhookService->markTransactionProcessed($intentId, $providerTxnId, hash('sha256', $payload));
         if (!$processed) {
             return response()->json(['message' => 'Duplicate webhook ignored'], 202);
         }
 
-        DB::table('payment_intents')
-            ->where('intent_uuid', (string) $request->input('intent_id'))
+        $updatedRows = DB::table('payment_intents')
+            ->where('intent_uuid', $intentId)
             ->update([
                 'status' => 'paid',
+                'provider_txn_id' => $providerTxnId,
                 'updated_at' => now(),
             ]);
+
+        if ($updatedRows !== 1) {
+            return response()->json(['message' => 'Unable to update payment intent'], 409);
+        }
 
         return response()->json(['message' => 'Webhook processed']);
     }

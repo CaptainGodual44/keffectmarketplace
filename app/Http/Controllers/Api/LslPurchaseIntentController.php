@@ -8,6 +8,7 @@ use App\Domain\LslBridge\Services\SignatureValidator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LslPurchaseIntentRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 final class LslPurchaseIntentController extends Controller
@@ -38,17 +39,25 @@ final class LslPurchaseIntentController extends Controller
 
         $intentId = (string) str()->uuid();
 
-        DB::table('payment_intents')->insert([
-            'intent_uuid' => $intentId,
-            'user_uuid' => $request->string('avatar_id')->toString(),
-            'order_id' => null,
-            'amount' => (int) $request->integer('amount'),
-            'currency' => 'L$',
-            'status' => 'pending_authorized_debit',
-            'nonce' => $nonce,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            DB::table('payment_intents')->insert([
+                'intent_uuid' => $intentId,
+                'user_uuid' => $request->string('avatar_id')->toString(),
+                'order_id' => null,
+                'amount' => (int) $request->integer('amount'),
+                'currency' => 'L$',
+                'status' => 'pending_authorized_debit',
+                'nonce' => $nonce,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (QueryException $exception) {
+            if ($exception->getCode() === '23000') {
+                return response()->json(['message' => 'Replay detected: nonce already used'], 409);
+            }
+
+            throw $exception;
+        }
 
         return response()->json([
             'intent_id' => $intentId,

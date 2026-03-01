@@ -102,6 +102,32 @@ final class PaymentEndpointSecurityTest extends TestCase
             ->assertJsonPath('message', 'Invalid webhook signature');
     }
 
+
+    public function test_webhook_rejects_unknown_intent_without_marking_transaction_processed(): void
+    {
+        config()->set('services.linden.webhook_secret', 'expected-secret');
+
+        $payload = [
+            'intent_id' => (string) str()->uuid(),
+            'provider_txn_id' => 'txn-missing-intent',
+            'amount' => 150,
+            'currency' => 'L$',
+        ];
+
+        $json = json_encode($payload, JSON_THROW_ON_ERROR);
+        $signature = hash_hmac('sha256', $json, 'expected-secret');
+
+        $this->postJson('/api/payments/linden/webhook', $payload, [
+            'X-LINDEN-SIGNATURE' => $signature,
+        ])
+            ->assertStatus(404)
+            ->assertJsonPath('message', 'Unknown payment intent');
+
+        $this->assertFalse(DB::table('payment_webhook_events')
+            ->where('provider_txn_id', 'txn-missing-intent')
+            ->exists());
+    }
+
     public function test_duplicate_webhook_is_idempotent(): void
     {
         config()->set('services.linden.webhook_secret', 'expected-secret');
